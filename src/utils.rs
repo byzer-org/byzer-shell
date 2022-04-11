@@ -8,6 +8,7 @@ mod printer;
 mod reader;
 mod table_printer;
 pub mod shrust;
+pub mod conf;
 
 use crate::utils::printer::{ColorizeSpec, HtmlTableFormat, JsonTable, PlainTextTableFormat, PlainTextTablePrinter, Printer, TableFormat, TableHeader};
 use crate::utils::reader::{OneShotValueReader, ValueReader};
