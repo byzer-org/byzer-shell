@@ -35,6 +35,16 @@ engine.spark.shuffle.spill.batchSize=1000
 
 ## Example
 
+Download the Byzer-lang all-in-one release:
+
+1. [Mac](https://download.byzer.org/byzer/nightly-build/byzer-lang-darwin-amd64-3.0-latest.tar.gz)
+2. [Linux](https://download.byzer.org/byzer/nightly-build/byzer-lang-linux-amd64-3.0-latest.tar.gz)
+3. [Windows](https://download.byzer.org/byzer/nightly-build/byzer-lang-win-amd64-3.0-latest.tar.gz)
+
+untar and then copy the `byzer-shell` to directory `bin`.
+
+Now you can try some code like following:
+
 ```
 (base) [w@me byzer-lang-darwin-amd64-3.0-2.2.2]$ ./bin/byzer-shell --conf conf/.mlsql.config
 Conf file: "conf/.mlsql.config"
