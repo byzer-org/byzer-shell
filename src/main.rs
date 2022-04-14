@@ -14,8 +14,7 @@ use std::string::String;
 
 mod utils;
 
-use crate::utils::shrust::{ExecResult, Shell, ShellIO};
-use crate::utils::run_script;
+use crate::utils::{run_loop, run_script};
 use crate::utils::conf::ByzerConf;
 
 #[derive(Parser, Debug)]
@@ -46,22 +45,19 @@ fn main() {
     let mut byzer_conf = ByzerConf::new(byzer_home.to_string(), config_path_opt);
     byzer_conf.build();
 
-    let mut exec_c = std::process::Command::new(byzer_conf.build_java_command());
+    let java_exec = byzer_conf.build_java_command();
+    println!("Byzer Kernel: {} {} ", java_exec, byzer_conf.byzer_command.as_slice().join(" "));
+
+    let mut exec_c = std::process::Command::new(java_exec);
     exec_c.args(byzer_conf.byzer_command.as_slice());
     let mut pid = exec_c.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn();
 
-    let v: Vec<String> = Vec::new();
-    let mut shell = Shell::new(v);
 
-    shell.set_default(move |io, sh, s| {
-        writeln!(io, "Executing....")?;
+    run_loop(move |s| {
+        println!("{}", "\n\n");
         let res = run_script(byzer_conf.engine_url.as_str(), s, byzer_conf.owner.as_str(), &byzer_conf.request_config);
-        // writeln!(io, "Resp:\n {}", res);
         utils::print_as_table(res.as_str());
-        Ok(())
     });
-
-    shell.run_loop(&mut ShellIO::default());
 
     if pid.is_ok() {
         pid.unwrap().kill();

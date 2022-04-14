@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use stringreader::StringReader;
 use reqwest;
+use rustyline::Editor;
+use rustyline::error::ReadlineError;
 use serde::de::Unexpected::Option;
 use serde_json::{json, Value};
 
@@ -12,6 +14,7 @@ pub mod conf;
 
 use crate::utils::printer::{ColorizeSpec, HtmlTableFormat, JsonTable, PlainTextTableFormat, PlainTextTablePrinter, Printer, TableFormat, TableHeader};
 use crate::utils::reader::{OneShotValueReader, ValueReader};
+use crate::utils::shrust::MatchScriptEndValidator;
 
 pub fn array_to_map<'a>(array: &'a [&str]) -> HashMap<&'a str, &'a str> {
     let mut element_map = HashMap::new();
@@ -33,6 +36,7 @@ pub fn map_to_array<'a>(map: HashMap<&'a str, &'a str>) -> Vec<&'a str> {
 pub fn run_script(endpoint: &str, sql: &str, owner: &str, config: &HashMap<String, String>) -> String {
     let client = reqwest::blocking::Client::new();
     let mut params = HashMap::new();
+    println!("Executing Byzer... {}", sql);
     params.insert("sql", sql);
     params.insert("owner", owner);
     params.insert("outputSize", "50");
@@ -63,5 +67,32 @@ pub fn print_as_table(data: &str) {
     };
     let table = JsonTable::new(None, &newdata);
     PlainTextTablePrinter::new(vec![], PlainTextTableFormat::Default).print(&table).unwrap();
+}
+
+pub fn run_loop<F>(func: F) where F: Fn(&str) {
+    let mut rl = Editor::new();
+    let validator = MatchScriptEndValidator::new();
+    rl.set_helper(Some(validator));
+    let mut prompt = ">> ";
+    loop {
+        let readline = rl.readline(prompt);
+        match readline {
+            Ok(line) => {
+                func(&line)
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
+    }
 }
 

@@ -162,9 +162,6 @@ impl ByzerConf {
         if !xmx.is_empty() {
             command = [xmx_slice, command.as_slice()].concat::<&str>();
         }
-
-        println!("{:?}", command.as_slice());
-
         let final_command = command.into_iter().map(|item| { item.to_owned() }).collect::<Vec<String>>();
         self.byzer_command = final_command;
         self
