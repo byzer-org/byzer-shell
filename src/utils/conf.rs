@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
 use crate::utils::{array_to_map, map_to_array};
@@ -14,6 +15,21 @@ pub struct ByzerConf {
     pub request_config: HashMap<String, String>,
     pub byzer_command: Vec<String>,
     pub owner: String,
+}
+
+fn scan_port(port: u16) -> bool {
+    match TcpStream::connect(("0.0.0.0", port)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+fn available_port() -> u16 {
+    let mut start_port = 9003;
+    while scan_port(start_port) {
+        start_port += 1
+    };
+    start_port
 }
 
 impl ByzerConf {
@@ -68,6 +84,7 @@ impl ByzerConf {
         executable
     }
 
+
     pub fn build(&mut self) -> &ByzerConf {
         let mut mlsql_config = self.read_config_from_file();
 
@@ -102,6 +119,8 @@ impl ByzerConf {
 
         let main_class = "streaming.core.StreamingApp";
 
+        let interpreter_port = available_port().to_string();
+
         let default_config_array = ["-streaming.master", "local[*]",
             "-streaming.name", "Byzer-shell",
             "-streaming.rest", "true",
@@ -110,7 +129,7 @@ impl ByzerConf {
             "-streaming.spark.service", "true",
             "-streaming.job.cancel", "true",
             "-streaming.datalake.path", data_path.as_path().to_str().unwrap(),
-            "-streaming.driver.port", "9003",
+            "-streaming.driver.port", interpreter_port.as_str(),
             "-streaming.plugin.clzznames", "tech.mlsql.plugins.ds.MLSQLExcelApp,tech.mlsql.plugins.shell.app.MLSQLShell,tech.mlsql.plugins.assert.app.MLSQLAssert",
             "-streaming.mlsql.script.owner", self.owner.as_str()
         ];
@@ -158,10 +177,11 @@ impl ByzerConf {
             }
         }
 
+        let default_interpreter_address = format!("http://127.0.0.1:{}", interpreter_port);
         let mut engine_url = mlsql_config
             .get("engine.url")
             .map(|item| item.as_str().trim_end_matches("/"))
-            .unwrap_or("http://127.0.0.1:9003")
+            .unwrap_or(default_interpreter_address.as_str())
             .to_string();
         engine_url.push_str("/run/script");
 
