@@ -127,13 +127,13 @@ pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
 pub fn print_pretty_header(byzer_conf: &ByzerConf) {
     println!("Byzer-lang interpreter is staring...\n");
     let mut count = 0;
-
-    while show_version(byzer_conf).is_none() && count < 30 {
+    let max_count = 30;
+    while show_version(byzer_conf).is_none() && count < max_count {
         sleep(time::Duration::from_secs(1));
         count += 1
     }
 
-    if count == 10 {
+    if count == max_count {
         panic!("Fail to start byzer-lang interpreter")
     }
 
