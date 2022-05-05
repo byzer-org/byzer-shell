@@ -128,7 +128,7 @@ pub fn print_pretty_header(byzer_conf: &ByzerConf) {
     println!("Byzer-lang interpreter is staring...\n");
     let mut count = 0;
 
-    while show_version(byzer_conf).is_none() && count < 10 {
+    while show_version(byzer_conf).is_none() && count < 30 {
         sleep(time::Duration::from_secs(1));
         count += 1
     }
