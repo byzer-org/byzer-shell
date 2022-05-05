@@ -1,9 +1,11 @@
 use reqwest;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-use serde::de::Unexpected::Option;
+use std::option::Option;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::thread::sleep;
+use std::time;
 use stringreader::StringReader;
 
 pub mod conf;
@@ -79,8 +81,8 @@ pub fn print_as_table(data: &str) {
 }
 
 pub fn run_loop<F>(func: F)
-where
-    F: Fn(&str),
+    where
+        F: Fn(&str),
 {
     let mut rl = Editor::new();
     let validator = MatchScriptEndValidator::new();
@@ -106,11 +108,7 @@ where
     }
 }
 
-pub fn print_pretty_header(byzer_conf: &ByzerConf) {
-    println!("Successfully Initialization...\n");
-
-    print_logo();
-
+pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
     let version_info_query = "!show version;";
     let res = run_script(
         byzer_conf.engine_url.as_str(),
@@ -118,6 +116,30 @@ pub fn print_pretty_header(byzer_conf: &ByzerConf) {
         byzer_conf.owner.as_str(),
         &byzer_conf.request_config,
     );
+    if res.starts_with("Fail to execute caused by") {
+        None
+    } else {
+        Some(res)
+    }
+}
+
+
+pub fn print_pretty_header(byzer_conf: &ByzerConf) {
+    let mut count = 0;
+
+    while show_version(byzer_conf).is_none() && count < 10 {
+        sleep(time::Duration::from_secs(1));
+        count += 1
+    }
+
+    if count == 10 {
+        panic!("Fail to start byzer-lang process")
+    }
+
+    println!("Successfully Initialization...\n");
+    print_logo();
+
+    let res = show_version(byzer_conf).unwrap();
     let version: Value = serde_json::from_str(&res).unwrap();
     println!("\n\nversion: {:?}", version[0]["version"].as_str().unwrap());
     println!("buildBy: {:?}", version[0]["buildBy"].as_str().unwrap());
