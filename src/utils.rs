@@ -125,6 +125,7 @@ pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
 
 
 pub fn print_pretty_header(byzer_conf: &ByzerConf) {
+    println!("Byzer-lang interpreter is staring...\n");
     let mut count = 0;
 
     while show_version(byzer_conf).is_none() && count < 10 {
@@ -133,10 +134,9 @@ pub fn print_pretty_header(byzer_conf: &ByzerConf) {
     }
 
     if count == 10 {
-        panic!("Fail to start byzer-lang process")
+        panic!("Fail to start byzer-lang interpreter")
     }
 
-    println!("Byzer-lang interpreter is started...\n");
     print_logo();
 
     let res = show_version(byzer_conf).unwrap();
