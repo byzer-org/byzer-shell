@@ -136,7 +136,7 @@ pub fn print_pretty_header(byzer_conf: &ByzerConf) {
         panic!("Fail to start byzer-lang process")
     }
 
-    println!("Successfully Initialization...\n");
+    println!("Byzer-lang interpreter is started...\n");
     print_logo();
 
     let res = show_version(byzer_conf).unwrap();
