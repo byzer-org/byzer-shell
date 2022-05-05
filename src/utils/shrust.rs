@@ -1,23 +1,22 @@
 //! A library for creating interactive command line shells
-use prettytable::Table;
 use prettytable::format;
+use prettytable::Table;
 
-use std::io;
-use std::io::prelude::*;
-use std::string::ToString;
 use std::error::Error;
 use std::fmt;
+use std::io;
+use std::io::prelude::*;
 use std::ops::{Deref, DerefMut, Shl};
+use std::string::ToString;
 use std::sync::{Arc, Mutex};
 
-use std::collections::BTreeMap;
 use rustyline::config::Configurer;
+use std::collections::BTreeMap;
 
 use rustyline::error::ReadlineError;
-use rustyline::{EditMode, Editor, Helper, OutputStreamType};
 use rustyline::validate::{ValidationContext, ValidationResult, Validator};
+use rustyline::{EditMode, Editor, Helper, OutputStreamType};
 use rustyline_derive::{Completer, Helper, Highlighter, Hinter};
-
 
 #[derive(Completer, Helper, Highlighter, Hinter)]
 pub struct MatchScriptEndValidator {

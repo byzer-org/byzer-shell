@@ -23,7 +23,9 @@ impl<R: Read> ValueReader for OneShotValueReader<R> {
     fn read_value(self, take: Option<usize>) -> GenericResult<Value> {
         let value = serde_json::from_reader::<_, Value>(self.read)?;
         if let (Some(take), Value::Array(arr)) = (take, &value) {
-            Ok(Value::Array(arr.iter().take(take).map(|e| e.to_owned()).collect()))
+            Ok(Value::Array(
+                arr.iter().take(take).map(|e| e.to_owned()).collect(),
+            ))
         } else {
             Ok(value)
         }
@@ -43,26 +45,24 @@ impl<R: BufRead> StreamingValueReader<R> {
 impl<R: BufRead> ValueReader for StreamingValueReader<R> {
     fn read_value(self, take: Option<usize>) -> GenericResult<Value> {
         let take = take.unwrap_or(100);
-        let elements: Vec<Value> =
-            self.buf_read
-                .lines()
-                .take(take)
-                .flat_map(|line| match line {
-                    Ok(line) => {
-                        match serde_json::from_str::<Value>(line.as_str()) {
-                            Ok(parsed) => Some(parsed),
-                            Err(err) => {
-                                eprintln!("error parsing row: {}", err.to_string());
-                                None
-                            }
-                        }
-                    }
+        let elements: Vec<Value> = self
+            .buf_read
+            .lines()
+            .take(take)
+            .flat_map(|line| match line {
+                Ok(line) => match serde_json::from_str::<Value>(line.as_str()) {
+                    Ok(parsed) => Some(parsed),
                     Err(err) => {
-                        eprintln!("error reading row: {}", err.to_string());
+                        eprintln!("error parsing row: {}", err.to_string());
                         None
                     }
-                })
-                .collect();
+                },
+                Err(err) => {
+                    eprintln!("error reading row: {}", err.to_string());
+                    None
+                }
+            })
+            .collect();
 
         Ok(Value::Array(elements))
     }

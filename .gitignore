@@ -2,3 +2,7 @@
 /.idea
 /Cargo.lock
 /deploy.sh
+
+/build.sh
+
+/to-do-list

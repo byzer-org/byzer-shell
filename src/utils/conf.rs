@@ -58,7 +58,10 @@ impl ByzerConf {
         }
 
         if self.java_home.is_empty() {
-            let buf = PathBuf::new().join(self.java_home.as_str()).join("bin").join(java_name);
+            let buf = PathBuf::new()
+                .join(self.java_home.as_str())
+                .join("bin")
+                .join(java_name);
             executable = buf.as_path().to_str().unwrap().to_owned()
         };
 
@@ -78,10 +81,22 @@ impl ByzerConf {
             self.owner = item.to_owned()
         }
 
-        let main_lib = PathBuf::new().join(self.byzer_home.as_str()).join("main").join("*");
-        let libs_lib = PathBuf::new().join(self.byzer_home.as_str()).join("libs").join("*");
-        let plugin_lib = PathBuf::new().join(self.byzer_home.as_str()).join("plugin").join("*");
-        let spark_lib = PathBuf::new().join(self.byzer_home.as_str()).join("spark").join("*");
+        let main_lib = PathBuf::new()
+            .join(self.byzer_home.as_str())
+            .join("main")
+            .join("*");
+        let libs_lib = PathBuf::new()
+            .join(self.byzer_home.as_str())
+            .join("libs")
+            .join("*");
+        let plugin_lib = PathBuf::new()
+            .join(self.byzer_home.as_str())
+            .join("plugin")
+            .join("*");
+        let spark_lib = PathBuf::new()
+            .join(self.byzer_home.as_str())
+            .join("spark")
+            .join("*");
 
         let data_path = PathBuf::new().join(".").join("data");
 
@@ -108,15 +123,33 @@ impl ByzerConf {
             modified_default_config.insert(k.to_string(), v.to_string());
         }
 
-
         for (k, v) in &mlsql_config {
             if k.starts_with("engine.spark") || k.starts_with("engine.streaming") {
                 if k == "engine.streaming.plugin.clzznames" {
-                    modified_default_config.insert("-streaming.plugin.clzznames".to_string(), format!("{}{}{}", default_config["-streaming.plugin.clzznames"], ",", v.to_string()));
+                    modified_default_config.insert(
+                        "-streaming.plugin.clzznames".to_string(),
+                        format!(
+                            "{}{}{}",
+                            default_config["-streaming.plugin.clzznames"],
+                            ",",
+                            v.to_string()
+                        ),
+                    );
                 } else if k == "engine.streaming.platform_hooks" {
-                    modified_default_config.insert("-streaming.platform_hooks".to_string(), format!("{}{}{}", default_config["-streaming.platform_hooks"], ",", v.to_string()));
+                    modified_default_config.insert(
+                        "-streaming.platform_hooks".to_string(),
+                        format!(
+                            "{}{}{}",
+                            default_config["-streaming.platform_hooks"],
+                            ",",
+                            v.to_string()
+                        ),
+                    );
                 } else {
-                    modified_default_config.insert(format!("{}{}", "-", k.trim_start_matches("engine.")), v.to_string());
+                    modified_default_config.insert(
+                        format!("{}{}", "-", k.trim_start_matches("engine.")),
+                        v.to_string(),
+                    );
                 }
             }
 
@@ -125,7 +158,11 @@ impl ByzerConf {
             }
         }
 
-        let mut engine_url = mlsql_config.get("engine.url").map(|item| { item.as_str().trim_end_matches("/") }).unwrap_or("http://127.0.0.1:9003").to_string();
+        let mut engine_url = mlsql_config
+            .get("engine.url")
+            .map(|item| item.as_str().trim_end_matches("/"))
+            .unwrap_or("http://127.0.0.1:9003")
+            .to_string();
         engine_url.push_str("/run/script");
 
         self.engine_url = engine_url;
@@ -146,14 +183,16 @@ impl ByzerConf {
             classpath_seperator = ";";
         }
 
-        let classpath = format!("{}{}{}{}{}{}{}",
-                                main_lib.as_path().to_str().unwrap(),
-                                classpath_seperator,
-                                libs_lib.as_path().to_str().unwrap(),
-                                classpath_seperator,
-                                plugin_lib.as_path().to_str().unwrap(),
-                                classpath_seperator,
-                                spark_lib.as_path().to_str().unwrap());
+        let classpath = format!(
+            "{}{}{}{}{}{}{}",
+            main_lib.as_path().to_str().unwrap(),
+            classpath_seperator,
+            libs_lib.as_path().to_str().unwrap(),
+            classpath_seperator,
+            plugin_lib.as_path().to_str().unwrap(),
+            classpath_seperator,
+            spark_lib.as_path().to_str().unwrap()
+        );
 
         let temp_command = &["-cp", classpath.as_str(), main_class];
 
@@ -162,7 +201,10 @@ impl ByzerConf {
         if !xmx.is_empty() {
             command = [xmx_slice, command.as_slice()].concat::<&str>();
         }
-        let final_command = command.into_iter().map(|item| { item.to_owned() }).collect::<Vec<String>>();
+        let final_command = command
+            .into_iter()
+            .map(|item| item.to_owned())
+            .collect::<Vec<String>>();
         self.byzer_command = final_command;
         self
     }
@@ -174,10 +216,7 @@ impl ByzerConf {
         }
         let p = self.config_path.as_ref().unwrap();
 
-        let b_reader = BufReader::new(
-            File::open(
-                Path::new(p)
-            ).unwrap());
+        let b_reader = BufReader::new(File::open(Path::new(p)).unwrap());
 
         let lines = b_reader.lines();
         for _line in lines {
@@ -193,7 +232,7 @@ impl ByzerConf {
                 let kv = line1.splitn(2, "=").into_iter().collect::<Vec<_>>();
                 config.insert(kv[0].trim().to_owned(), kv[1].trim().to_owned());
             }
-        };
+        }
         config
     }
 }

@@ -1,8 +1,7 @@
+use crate::utils::printer::{HtmlTableFormat, PlainTextTableFormat, TableFormat};
 use std::error::Error;
 use std::io;
 use std::str::FromStr;
-use crate::utils::printer::{HtmlTableFormat, PlainTextTableFormat, TableFormat};
-
 
 impl FromStr for TableFormat {
     type Err = String;
@@ -13,7 +12,7 @@ impl FromStr for TableFormat {
             "markdown" => Ok(TableFormat::PlainText(PlainTextTableFormat::Markdown)),
             "html" => Ok(TableFormat::Html(HtmlTableFormat::Styled)),
             "html-raw" => Ok(TableFormat::Html(HtmlTableFormat::Raw)),
-            _ => Err(format!("unknown format: {}", s))
+            _ => Err(format!("unknown format: {}", s)),
         }
     }
 }
