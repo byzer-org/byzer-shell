@@ -1,6 +1,4 @@
 use crate::utils::printer::{HtmlTableFormat, PlainTextTableFormat, TableFormat};
-use std::error::Error;
-use std::io;
 use std::str::FromStr;
 
 impl FromStr for TableFormat {

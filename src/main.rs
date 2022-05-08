@@ -2,15 +2,10 @@
 extern crate prettytable;
 
 use clap::Parser;
-use std::collections::HashMap;
-use std::fmt::format;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
+
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::string::String;
-use std::{env, thread};
+use std::env;
 use utils::print_pretty_header;
 
 mod utils;
