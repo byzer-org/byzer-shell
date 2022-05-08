@@ -16,8 +16,7 @@ mod table_printer;
 
 use crate::utils::conf::ByzerConf;
 use crate::utils::printer::{
-    ColorizeSpec, HtmlTableFormat, JsonTable, PlainTextTableFormat, PlainTextTablePrinter, Printer,
-    TableFormat, TableHeader,
+    JsonTable, PlainTextTableFormat, PlainTextTablePrinter, Printer,
 };
 use crate::utils::reader::{OneShotValueReader, ValueReader};
 use crate::utils::shrust::EditHelper;
@@ -86,9 +85,8 @@ pub fn run_loop<F>(func: F)
         F: Fn(&str),
 {
     let mut rl = Editor::new();
-    //let validator = MatchScriptEndValidator::new();
-    let validator = EditHelper::new();
-    rl.set_helper(Some(validator));
+    let edit_helper = EditHelper::new();
+    rl.set_helper(Some(edit_helper));
     let mut prompt = ">> ";
     loop {
         let readline = rl.readline(prompt);

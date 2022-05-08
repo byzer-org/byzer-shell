@@ -1,76 +1,59 @@
 //! A library for creating interactive command line shells
-use prettytable::format;
-use prettytable::Table;
 use rustyline::highlight::Highlighter;
+use colored::*;
 
-use std::error::Error;
-use std::fmt;
-use std::io;
-use std::io::prelude::*;
-use std::ops::{Deref, DerefMut, Shl};
 use std::string::ToString;
-use std::sync::{Arc, Mutex};
 use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;
 use std::borrow::Cow::Owned;
 
-use rustyline::error::ReadlineError;
 use rustyline::validate::{ValidationContext, ValidationResult, Validator};
-use rustyline::{EditMode, Editor, Helper, OutputStreamType};
-use rustyline_derive::{Completer, Helper, Highlighter, Hinter};
+use rustyline_derive::{Completer, Helper, Hinter};
 
-// #[derive(Completer, Helper, Highlighter, Hinter)]
-// pub struct MatchScriptEndValidator {
-//     _priv: (),
-// }
-
-// // Completer + Hinter + Highlighter + Validator
-// impl MatchScriptEndValidator {
-//     /// Constructor
-//     pub fn new() -> Self {
-//         Self { _priv: () }
-//     }
-// }
-
-// impl Validator for MatchScriptEndValidator {
-//     fn validate(&self, ctx: &mut ValidationContext) -> rustyline::Result<ValidationResult> {
-//         let i = ctx.input();
-//         if i.ends_with(";") {
-//             Ok(ValidationResult::Valid(None))
-//         } else {
-//             Ok(ValidationResult::Incomplete)
-//         }
-//     }
-// }
-
+use std::collections::HashSet;
 #[derive(Completer, Helper, Hinter)]
 pub struct EditHelper {
     _match_script_end_validator: (),
     _highlighter: (),
+    sql_keyword_list: HashSet<String>,
 }
 
 impl EditHelper {
     /// Constructor
     pub fn new() -> Self {
+        let sql_keyword_list: HashSet<String> = HashSet::from(
+            [
+                "add", "all", "alter", "and", "any", "as", "asc", "backup", "between", "by", "connect", "constraint", 
+                "column", "case", "check", "create", "database","default", "delete", "desc", "distinct", "drop","exec", 
+                "exists", "foreign", "from", "full", "group","having", "in", "is", "index", "inner", "into", "join", 
+                "key", "load", "left", "like", "limit", "local", "null", "not", "outer", "or", "order", "primary", 
+                "procedure", "replace", "right", "rownum", "set", "select", "table", "top", "truncate", "unique", "union", 
+                "update", "view", "values", "where", "!if", "!else", "!show"
+            ].map(|s| s.to_string())
+        );
+
         Self { 
             _match_script_end_validator: (),
             _highlighter: (),
+            sql_keyword_list,
         }
     }
 }
 
-fn word_matching_color_mode(key_word: &str) -> Option<String> {
-    // need to refactor the key_word list
-    match key_word {
-        "select" | "as" | "load" | "set" | "from" | "where" | "connect" | "!show"  => Some(format!("\x1b[1;34m{}\x1b[0m", key_word)),
-        _ => None
+impl EditHelper {
+    fn word_matching_color_mode(&self, key_word: &str) -> Option<String> {
+        if self.sql_keyword_list.contains(&key_word.to_lowercase()) {
+            Some(format!("\x1b[1;34m{}\x1b[0m", key_word))
+        } else {
+            None
+        }
     }
 }
 
 fn split_with_whitespace(line: &str) -> Option<Vec<&str>> {
     let mut partition_set = Vec::new();
     let mut last = 0;
-    for (index, matched) in line.match_indices(|c: char| !c.is_alphanumeric()) {
+    for (index, matched) in line.match_indices(|c: char| !(c.is_alphanumeric() || c == '!')) {
         if last != index {
             partition_set.push(&line[last..index]);
         }
@@ -108,7 +91,7 @@ impl Highlighter for EditHelper {
         if let Some(partition_set) = split_with_whitespace(line) {
             let mut replaced_partition_set = Vec::new();
             for partition in partition_set.iter() {
-                match word_matching_color_mode(*partition) {
+                match self.word_matching_color_mode(*partition) {
                     Some(pat) => {
                         replaced_partition_set.push(pat);
                     },
