@@ -62,14 +62,14 @@ fn main() {
         let mut pb = ExecutingProgressBar::new();
         let monitor_handler = pb.start_monitor("Executing:".to_string());
         
-        let res = run_script(
+        let (status,res) = run_script(
             byzer_conf.engine_url.as_str(),
             s,
             byzer_conf.owner.as_str(),
             &byzer_conf.request_config,
         );
 
-        if res.starts_with("MLSQL Parser error") {
+        if status != 200 {
             pb.send_finish_signal(false);
         } else {
             pb.send_finish_signal(true);

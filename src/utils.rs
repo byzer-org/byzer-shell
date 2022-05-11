@@ -4,6 +4,7 @@ use rustyline::Editor;
 use std::option::Option;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::process::Output;
 use std::thread::sleep;
 use std::time;
 use stringreader::StringReader;
@@ -46,7 +47,7 @@ pub fn run_script(
     sql: &str,
     owner: &str,
     config: &HashMap<String, String>,
-) -> String {
+) -> (u16, String) {
     let client = reqwest::blocking::Client::new();
     let mut params = HashMap::new();
     params.insert("sql", sql);
@@ -58,11 +59,18 @@ pub fn run_script(
     }
 
     let resp = client.post(endpoint).form(&params).send();
-    let content = match resp {
-        Ok(item) => item.text().unwrap(),
-        Err(e) => format!("Fail to execute caused by {:?}", e.to_string()),
-    };
-    content
+    match resp {
+        Ok(item) => {
+            let status = item.status().as_u16();
+            let s = item.text().unwrap();
+            if status == 200 {
+                (200, s)
+            } else {
+                (status, format!("Fail to execute caused by {:?}", s))
+            }
+        }
+        Err(e) => (500, format!("Fail to execute caused by {:?}", e.to_string())),
+    }
 }
 
 pub fn print_as_table(data: &str) {
@@ -111,7 +119,7 @@ pub fn run_loop<F>(func: F)
 
 pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
     let version_info_query = "!show version;";
-    let res = run_script(
+    let (status,res) = run_script(
         byzer_conf.engine_url.as_str(),
         version_info_query,
         byzer_conf.owner.as_str(),
@@ -143,7 +151,7 @@ pub fn print_pretty_header(byzer_conf: &ByzerConf) {
 
     pb.send_finish_signal(true);
     monitor_handler.join().unwrap();
-    
+
     print_logo();
 
     let res = show_version(byzer_conf).unwrap();
