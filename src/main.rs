@@ -27,7 +27,7 @@ fn main() {
     let mut config_path = ".mlsql.config";
     if let Some(_config_path) = cli.conf.as_deref() {
         config_path = _config_path.to_str().unwrap();
-        println!("Conf file: {:?}", config_path)
+        println!("Conf file: {:?}\n", config_path)
     }
 
     let _byzer_home = env::current_exe().unwrap();
@@ -58,9 +58,9 @@ fn main() {
     print_pretty_header(&byzer_conf);
 
     run_loop(move |s| {
-        println!("{}", "\n");
+        println!("");
         let mut pb = ExecutingProgressBar::new();
-        let monitor_handler = pb.start_monitor();
+        let monitor_handler = pb.start_monitor("Executing:".to_string());
         
         let res = run_script(
             byzer_conf.engine_url.as_str(),

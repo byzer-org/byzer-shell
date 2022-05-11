@@ -17,7 +17,7 @@ impl ExecutingProgressBar {
     }
 
     /// start a child thread to monitor the execution, waiting for the finish signal.
-    pub fn start_monitor(&mut self) -> thread::JoinHandle<()> {
+    pub fn start_monitor(&mut self, prefix: String) -> thread::JoinHandle<()> {
         let (tx, rx) = channel::<bool>();
         self.finish_signal = Some(tx);
         let pb = ProgressBar::new_spinner();
@@ -29,7 +29,7 @@ impl ExecutingProgressBar {
         let h = thread::spawn(move || {
             let mut count: u64 = 0;
             loop {
-                pb.set_message(format!("Executing: {}s", count));
+                pb.set_message(format!("{} {}s", prefix, count));
                 match rx.try_recv() {
                     Ok(val) => {
                         pb.finish_and_clear();

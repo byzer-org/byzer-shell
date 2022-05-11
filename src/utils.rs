@@ -126,11 +126,11 @@ pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
 
 
 pub fn print_pretty_header(byzer_conf: &ByzerConf) {
-    println!("Byzer-lang interpreter is starting...\n");
+    //println!("Byzer-lang interpreter is starting...\n");
     let mut count = 0;
     let max_count = 30;
     let mut pb = ExecutingProgressBar::new();
-    let monitor_handler = pb.start_monitor();
+    let monitor_handler = pb.start_monitor("Byzer-lang interpreter is starting...".to_string());
     while show_version(byzer_conf).is_none() && count < max_count {
         sleep(time::Duration::from_secs(1));
         count += 1
