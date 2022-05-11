@@ -11,8 +11,13 @@ use utils::print_pretty_header;
 mod utils;
 
 use crate::utils::conf::ByzerConf;
+use crate::utils::progress_bar::ExecutingProgressBar;
 use crate::utils::{run_loop, run_script};
 
+use std::sync::mpsc::channel; 
+use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
+use std::thread::{self, sleep};
+use std::time::Duration;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
@@ -57,13 +62,25 @@ fn main() {
     print_pretty_header(&byzer_conf);
 
     run_loop(move |s| {
-        println!("{}", "\n\n");
+        println!("{}", "\n");
+        let mut pb = ExecutingProgressBar::new();
+        let monitor_handler = pb.start_monitor();
+        
         let res = run_script(
             byzer_conf.engine_url.as_str(),
             s,
             byzer_conf.owner.as_str(),
             &byzer_conf.request_config,
         );
+
+        if res.starts_with("MLSQL Parser error") {
+            pb.send_finish_signal(false);
+        } else {
+            pb.send_finish_signal(true);
+        }
+
+        monitor_handler.join().unwrap();
+
         utils::print_as_table(res.as_str());
     });
 
