@@ -49,7 +49,6 @@ pub fn run_script(
 ) -> String {
     let client = reqwest::blocking::Client::new();
     let mut params = HashMap::new();
-    //println!("Executing Byzer... {}", sql);
     params.insert("sql", sql);
     params.insert("owner", owner);
     params.insert("outputSize", "50");
