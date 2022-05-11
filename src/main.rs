@@ -11,6 +11,7 @@ use utils::print_pretty_header;
 mod utils;
 
 use crate::utils::conf::ByzerConf;
+use crate::utils::progress_bar::ExecutingProgressBar;
 use crate::utils::{run_loop, run_script};
 
 #[derive(Parser, Debug)]
@@ -26,7 +27,7 @@ fn main() {
     let mut config_path = ".mlsql.config";
     if let Some(_config_path) = cli.conf.as_deref() {
         config_path = _config_path.to_str().unwrap();
-        println!("Conf file: {:?}", config_path)
+        println!("Conf file: {:?}\n", config_path)
     }
 
     let _byzer_home = env::current_exe().unwrap();
@@ -57,13 +58,25 @@ fn main() {
     print_pretty_header(&byzer_conf);
 
     run_loop(move |s| {
-        println!("{}", "\n\n");
+        println!("");
+        let mut pb = ExecutingProgressBar::new();
+        let monitor_handler = pb.start_monitor("Executing:".to_string());
+        
         let res = run_script(
             byzer_conf.engine_url.as_str(),
             s,
             byzer_conf.owner.as_str(),
             &byzer_conf.request_config,
         );
+
+        if res.starts_with("MLSQL Parser error") {
+            pb.send_finish_signal(false);
+        } else {
+            pb.send_finish_signal(true);
+        }
+
+        monitor_handler.join().unwrap();
+
         utils::print_as_table(res.as_str());
     });
 
