@@ -96,11 +96,15 @@ pub fn run_loop<F>(func: F)
     let mut rl = Editor::new();
     let edit_helper = EditHelper::new();
     rl.set_helper(Some(edit_helper));
-    let mut prompt = ">> ";
+    
+    let prompt = ">> ";
     loop {
         let readline = rl.readline(prompt);
         match readline {
-            Ok(line) => func(&line),
+            Ok(line) => {
+                rl.add_history_entry(line.as_str());
+                func(&line)
+            },
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
                 break;
