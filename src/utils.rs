@@ -66,10 +66,10 @@ pub fn run_script(
             if status == 200 {
                 (200, s)
             } else {
-                (status, format!("Fail to execute caused by {:?}", s))
+                (status, s)
             }
         }
-        Err(e) => (500, format!("Fail to execute caused by {:?}", e.to_string())),
+        Err(e) => (500, e.to_string()),
     }
 }
 
@@ -119,13 +119,13 @@ pub fn run_loop<F>(func: F)
 
 pub fn show_version(byzer_conf: &ByzerConf) -> Option<String> {
     let version_info_query = "!show version;";
-    let (status,res) = run_script(
+    let (status, res) = run_script(
         byzer_conf.engine_url.as_str(),
         version_info_query,
         byzer_conf.owner.as_str(),
         &byzer_conf.request_config,
     );
-    if res.starts_with("Fail to execute caused by") {
+    if status != 200 {
         None
     } else {
         Some(res)
