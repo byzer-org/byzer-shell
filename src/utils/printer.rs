@@ -1,12 +1,17 @@
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 
-use prettytable::format::{FormatBuilder, LinePosition, LineSeparator};
-use prettytable::{format, Cell, Row, Table};
+// use prettytable::format::{FormatBuilder, LinePosition, LineSeparator};
+// use prettytable::{format, Cell, Row, Table};
 use regex::Regex;
 use serde_json::Value;
 use yaml_rust::yaml::{Array, Hash};
 use yaml_rust::{Yaml, YamlEmitter};
+
+use comfy_table::ContentArrangement;
+use comfy_table::{Table, Row, Cell, Color};
+use comfy_table::TableComponent::*;
 
 type GenericResult<T> = Result<T, Box<dyn Error>>;
 
@@ -64,7 +69,7 @@ fn infer_headers(arr: &Vec<Value>) -> TableHeader {
 pub struct ColorizeSpec {
     field: String,
     value: String,
-    style: String,
+    style: String, /* this field refers to style-set method of old prettytable crate */
 }
 
 impl ColorizeSpec {
@@ -156,6 +161,117 @@ fn pprint_table_cell(value: &Value) -> GenericResult<String> {
     }
 }
 
+/// A wrapper of comfy-table
+#[derive(Debug)]
+pub struct PlainTextTable {
+    inner_table: Table,
+}
+
+impl fmt::Display for PlainTextTable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner_table.lines().collect::<Vec<_>>().join("\n"))
+    }
+}
+
+impl PlainTextTable {
+    pub fn new() -> PlainTextTable {
+        PlainTextTable { inner_table: Table::new() }
+    }
+
+    pub fn set_content_arrangement(&mut self, arrangement: ContentArrangement) -> &mut Self {
+        self.inner_table.set_content_arrangement(arrangement);
+
+        self
+    }
+
+    pub fn set_header<T: Into<Row>>(&mut self, row: T) -> &mut Self {
+        self.inner_table.set_header(row);
+
+        self
+    }
+
+    pub fn add_row<T: Into<Row>>(&mut self, row: T) -> &mut Self {
+        self.inner_table.add_row(row);
+
+        self
+    }
+
+    pub fn set_corners(
+        &mut self, 
+        tlc: char, 
+        trc: char, 
+        blc: char, 
+        brc: char,
+    ) -> &mut Self {
+        self.inner_table
+        .set_style(TopLeftCorner, tlc)
+        .set_style(TopRightCorner, trc)
+        .set_style(BottomLeftCorner, blc)
+        .set_style(BottomRightCorner, brc);
+
+        self
+    }
+
+    pub fn set_intersections(
+        &mut self,
+        lhi: char,
+        rhi: char,
+        lbi: char,
+        rbi: char,
+        tbi: char,
+        mhi: char,
+        mi: char,
+        bbi: char,
+    ) -> &mut Self {
+        self.inner_table
+        .set_style(LeftHeaderIntersection, lhi)
+        .set_style(RightHeaderIntersection, rhi)
+        .set_style(LeftBorderIntersections, lbi)
+        .set_style(RightBorderIntersections, rbi)
+        .set_style(TopBorderIntersections, tbi)
+        .set_style(MiddleHeaderIntersections, mhi)
+        .set_style(MiddleIntersections, mi)
+        .set_style(BottomBorderIntersections, bbi);
+
+        self
+    }
+
+    pub fn set_lines(
+        &mut self,
+        hel: char,
+        hol: char,
+        vl: char,
+    ) -> &mut Self {
+        self.inner_table
+        .set_style(HeaderLines, hel)
+        .set_style(HorizontalLines, hol)
+        .set_style(VerticalLines, vl);
+
+        self
+    }
+
+    pub fn set_borders(
+        &mut self,
+        lb: char,
+        rb: char,
+        tb: char,
+        bb: char,
+    ) -> &mut Self {
+        self.inner_table
+        .set_style(LeftBorder, lb)
+        .set_style(RightBorder, rb)
+        .set_style(TopBorder, tb)
+        .set_style(BottomBorder, bb);
+
+        self
+    }
+
+    pub fn get_inner_table(&mut self) -> &mut Table {
+        // get the wrapped table object to customize it with more flexibility
+        &mut self.inner_table
+    }
+}
+
 pub struct PlainTextTablePrinter {
     colorize: Vec<ColorizeSpec>,
     format: PlainTextTableFormat,
@@ -169,13 +285,14 @@ impl PlainTextTablePrinter {
 
 impl Printer for PlainTextTablePrinter {
     fn print(&self, data: &JsonTable) -> GenericResult<()> {
-        let mut table = Table::new();
+        let mut table = PlainTextTable::new();
+        table.set_content_arrangement(ContentArrangement::Dynamic);
 
         // header row
-        table.set_titles(Row::new(match &data.headers {
+        table.set_header(Row::from(match &data.headers {
             TableHeader::NamedFields { fields } => fields
                 .iter()
-                .map(|f| Cell::new(f).style_spec("bFc"))
+                .map(|f| Cell::new(f).fg(Color::Blue))
                 .collect(),
             TableHeader::SingleUnnamedColumn => vec![Cell::new("value")],
         }));
@@ -195,39 +312,45 @@ impl Printer for PlainTextTablePrinter {
         };
 
         // data rows
-
         for value in &data.values {
-            let mut row = Row::empty();
-            for (idx, element) in value.iter().enumerate() {
+            let mut row = Row::new();
+            for (_, element) in value.iter().enumerate() {
                 let formatted = pprint_table_cell(element)?;
                 let formatted = formatted.as_str();
                 let cell = Cell::new(formatted);
-                let cell = match colorize.get(&idx) {
-                    Some(styles) => match styles.iter().find(|s| s.value == *formatted) {
-                        Some(style) => cell.style_spec(style.style.as_str()),
-                        None => cell,
-                    },
-                    _ => cell,
-                };
-
+                // TODO: compatible with colorspec
+                // let cell = match colorize.get(&idx) {
+                //     Some(styles) => match styles.iter().find(|s| s.value == *formatted) {
+                //         Some(style) => cell.style_spec(style.style.as_str()),
+                //         None => cell,
+                //     },
+                //     _ => cell,
+                // };
                 row.add_cell(cell);
             }
             table.add_row(row);
         }
 
         match &self.format {
-            PlainTextTableFormat::Default => table.set_format(*format::consts::FORMAT_BOX_CHARS),
-            PlainTextTableFormat::Markdown => table.set_format(
-                FormatBuilder::new()
-                    .padding(1, 1)
-                    .separator(LinePosition::Title, LineSeparator::new('-', '|', '|', '|'))
-                    .column_separator('|')
-                    .borders('|')
-                    .build(),
-            ),
+            PlainTextTableFormat::Default => {
+                table
+                .set_corners('┌', '┐', '└', '┘')
+                .set_intersections('├','┤','├','┤','┬','┼','┼','┴')
+                .set_lines('─', '─', '│')
+                .set_borders('│', '│', '─', '─');
+
+            },
+            PlainTextTableFormat::Markdown => {
+                table
+                .set_corners(' ',' ',' ',' ')
+                .set_intersections('|', '|', '|', '|', ' ', '|', '|', ' ')
+                .set_lines('-', '-', '|')
+                .set_borders('|', '|', ' ', ' ');
+            }
         }
 
-        table.printstd();
+        println!("{}", table);
+
         Ok(())
     }
 }
