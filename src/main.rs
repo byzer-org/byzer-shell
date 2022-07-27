@@ -50,6 +50,7 @@ fn main() {
     byzer_conf.build();
 
     let java_exec = byzer_conf.build_java_command();
+    // println!("{}",java_exec);
 
     let mut exec_c = std::process::Command::new(java_exec);
     exec_c.args(byzer_conf.byzer_command.as_slice());

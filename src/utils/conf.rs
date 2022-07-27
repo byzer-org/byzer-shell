@@ -40,6 +40,12 @@ impl ByzerConf {
                 let mut path_buf = PathBuf::new();
                 path_buf.push(&byzer_home);
                 path_buf.push("jdk8");
+
+                if env::consts::OS == "macos" {
+                    path_buf.push("Contents");
+                    path_buf.push("Home");
+                }
+
                 let t_path = path_buf.as_path();
                 if t_path.exists() {
                     t_path.to_str().unwrap().to_string()
@@ -73,7 +79,7 @@ impl ByzerConf {
             classpath_seperator = ";";
         }
 
-        if self.java_home.is_empty() {
+        if !self.java_home.is_empty() {
             let buf = PathBuf::new()
                 .join(self.java_home.as_str())
                 .join("bin")
